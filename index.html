@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Drawing Video Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
+            color: white; 
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 500px; 
+            width: 100%;
+            text-align: center; 
+            margin-top: 30px;
+        }
+        h1 { 
+            color: #e94560; 
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+        .input-group {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+        input { 
+            padding: 15px; 
+            width: 100%; 
+            border-radius: 25px; 
+            border: 2px solid #e94560; 
+            margin: 10px 0; 
+            background: rgba(0,0,0,0.3);
+            color: white;
+            font-size: 1em;
+            text-align: center;
+        }
+        input::placeholder { color: #888; }
+        button { 
+            padding: 15px 40px; 
+            background: linear-gradient(45deg, #e94560, #ff6b6b); 
+            color: white; 
+            border: none; 
+            border-radius: 25px; 
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+        button:hover { 
+            transform: scale(1.05);
+            background: linear-gradient(45deg, #ff6b6b, #e94560);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        .result.active { display: block; }
+        .stage {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 15px;
+            border-left: 4px solid #e94560;
+        }
+        .stage-time {
+            color: #e94560;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .stage-desc {
+            margin-top: 5px;
+            font-size: 0.95em;
+        }
+        .stage-illusion {
+            color: #ff6b6b;
+            font-style: italic;
+            margin-top: 5px;
+            font-size: 0.85em;
+        }
+        .features {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(233, 69, 96, 0.2);
+            border-radius: 10px;
+        }
+        .features h3 {
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+        .feature-tag {
+            display: inline-block;
+            background: rgba(233, 69, 96, 0.3);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin: 5px;
+            font-size: 0.85em;
+        }
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+        .loading.active { display: block; }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top: 4px solid #e94560;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+        .error.active { display: block; }
+        .info-box {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 30px;
+            font-size: 0.85em;
+            color: #aaa;
+        }
+        .info-box h3 {
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 AI Drawing Video Generator</h1>
+        <p class="subtitle">Gere videos de desenho com efeito de duplo sentido visual!</p>
+        
+        <div class="input-group">
+            <input type="text" id="characterInput" placeholder="Digite o nome do personagem (ex: Goku, Naruto, Vegeta, Luffy, Gojo)">
+            <br>
+            <button id="generateBtn" onclick="generateVideo()">Gerar Roteiro Visual</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px;">Gerando roteiro visual...</p>
+        </div>
+        
+        <div class="result" id="result">
+            <h2 id="resultTitle"></h2>
+            <div id="stages"></div>
+            <div class="features">
+                <h3>🎯 Caracteristicas do Personagem</h3>
+                <div id="features"></div>
+            </div>
+        </div>
+        
+        <div class="error" id="error">
+            <p id="errorMsg"></p>
+        </div>
+        
+        <div class="info-box">
+            <h3>📖 Como funciona?</h3>
+            <p>1. Digite o nome de um personagem de anime</p>
+            <p>2. A IA cria um roteiro visual com 4 estagios</p>
+            <p>3. Cada estagio induz a uma interpretacao errada</p>
+            <p>4. No final, a revelacao mostra o personagem real!</p>
+            <p style="margin-top: 10px; color: #e94560;">Personagens disponiveis: Goku, Naruto, Vegeta, Luffy, Gojo</p>
+        </div>
+    </div>
+
+    <script>
+        async function generateVideo() {
+            const input = document.getElementById('characterInput');
+            const btn = document.getElementById('generateBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+            const character = input.value.trim();
+            
+            if (!character) {
+                showError('Por favor, digite o nome de um personagem!');
+                return;
+            }
+            
+            btn.disabled = true;
+            loading.classList.add('active');
+            result.classList.remove('active');
+            error.classList.remove('active');
+            
+            try {
+                const formData = new FormData();
+                formData.append('character', character);
+                
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(`${data.error}. Personagens disponiveis: ${data.available.join(', ')}`);
+                } else {
+                    showResult(data);
+                }
+            } catch (err) {
+                showError('Erro ao gerar roteiro. Tente novamente!');
+            } finally {
+                btn.disabled = false;
+                loading.classList.remove('active');
+            }
+        }
+        
+        function showResult(data) {
+            const result = document.getElementById('result');
+            const stagesDiv = document.getElementById('stages');
+            const featuresDiv = document.getElementById('features');
+            
+            document.getElementById('resultTitle').textContent = `🎬 Roteiro: ${data.character.toUpperCase()}`;
+            
+            stagesDiv.innerHTML = data.stages.map(stage => `
+                <div class="stage">
+                    <div class="stage-time">⏱️ ${stage.time}s - ${stage.time + 2}s</div>
+                    <div class="stage-desc">${stage.desc}</div>
+                    <div class="stage-illusion">👁️ Ilusao: "${stage.illusion}"</div>
+                </div>
+            `).join('');
+            
+            featuresDiv.innerHTML = data.features.map(f => `
+                <span class="feature-tag">${f}</span>
+            `).join('');
+            
+            result.classList.add('active');
+        }
+        
+        function showError(msg) {
+            document.getElementById('errorMsg').textContent = msg;
+            document.getElementById('error').classList.add('active');
+        }
+        
+        // Permitir Enter para gerar
+        document.getElementById('characterInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') generateVideo();
+        });
+    </script>
+</body>
+</html>
